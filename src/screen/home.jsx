@@ -55,7 +55,7 @@ function ScalePressable({ children, onPress, style }) {
   );
 }
 
-/* ---------- Product Card: layout like your screenshot ---------- */
+/* ---------- Product Card ---------- */
 const ProductCard = ({ item, index, navigation }) => {
   // entrance animation for each card
   const anim = useRef(new Animated.Value(0)).current;
@@ -127,7 +127,10 @@ function HomeHeader({ search, setSearch, navigation }) {
               <FontAwesomeIcon icon={faBell} size={16} color="#001cab" />
               <View style={styles.dot} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.iconWrap, { marginLeft: 10 }]}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Keranjang")}
+              style={[styles.iconWrap, { marginLeft: 10 }]}
+            >
               <FontAwesomeIcon icon={faCartShopping} size={16} color="#001cab" />
             </TouchableOpacity>
           </View>

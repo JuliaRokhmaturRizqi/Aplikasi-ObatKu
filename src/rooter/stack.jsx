@@ -10,6 +10,7 @@ import MainTabs from './MainTabs';
 import halamanBantuan from '../screen/bantuan';
 import DetailProduk from '../screen/DetailProduk'; // <--- 1. PASTIKAN INI DI-IMPORT
 import PetunjukPengguna from '../screen/PetunjukPengguna'; 
+import Keranjang from '../screen/Keranjang';
 const Stack = createNativeStackNavigator();
 
 export default function RootStack() {
@@ -42,6 +43,13 @@ export default function RootStack() {
         component={PetunjukPengguna} 
         options={{ headerShown: true, title: "Petunjuk Pengguna" }}
       />
+
+      <Stack.Screen 
+        name="Keranjang" 
+        component={Keranjang} 
+        options={{ animation: "slide_from_right", headerShown: true, title: "Keranjang Saya" }}
+      />
+
     </Stack.Navigator>
   );
 }
