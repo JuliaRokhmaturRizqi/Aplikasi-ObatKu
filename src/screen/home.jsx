@@ -24,12 +24,66 @@ const { width } = Dimensions.get("window");
 
 /* ---------- Dummy data ---------- */
 const PRODUCT_DATA = [
-  { id: "1", name: "Paracetamol 500mg", desc: "Obat pereda demam dan nyeri kepala.", price: "Rp 12.000", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=60", rating: 4.8 },
-  { id: "2", name: "Vitamin C 1000mg", desc: "Menjaga daya tahan tubuh harian.", price: "Rp 45.000", image: "https://images.unsplash.com/photo-1550572017-4fcdbb56c739?auto=format&fit=crop&w=500&q=60", rating: 4.9 },
-  { id: "3", name: "Masker Medis 3 Ply", desc: "Masker sekali pakai, filtrasi tinggi.", price: "Rp 25.000", image: "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=500&q=60", rating: 4.5 },
-  { id: "4", name: "Termometer Digital", desc: "Akurat & mudah dibaca.", price: "Rp 85.000", image: "https://images.unsplash.com/photo-1584634731339-252c581abfc5?auto=format&fit=crop&w=500&q=60", rating: 4.7 },
-  { id: "5", name: "Hand Sanitizer", desc: "Antiseptik 70% alkohol.", price: "Rp 30.000", image: "https://images.unsplash.com/photo-1584483766114-2cea6fac2564?auto=format&fit=crop&w=500&q=60", rating: 4.6 },
-  { id: "6", name: "Minyak Kayu Putih", desc: "Menghangatkan tubuh & meredakan gatal.", price: "Rp 22.000", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=60", rating: 4.9 },
+  {
+    id: "1",
+    name: "Paracetamol 500mg",
+    desc: "Obat pereda demam dan nyeri kepala.",
+    price: "Rp 12.000",
+    image:
+      "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=60",
+    rating: 4.8,
+    sellerName: "Juliafarma",
+  },
+  {
+    id: "2",
+    name: "Vitamin C 1000mg",
+    desc: "Menjaga daya tahan tubuh harian.",
+    price: "Rp 45.000",
+    image:
+      "https://images.unsplash.com/photo-1550572017-4fcdbb56c739?auto=format&fit=crop&w=500&q=60",
+    rating: 4.9,
+    sellerName: "SehatSelalu",
+  },
+  {
+    id: "3",
+    name: "Masker Medis 3 Ply",
+    desc: "Masker sekali pakai, filtrasi tinggi.",
+    price: "Rp 25.000",
+    image:
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=500&q=60",
+    rating: 4.5,
+    sellerName: "tokoobat",
+  },
+  {
+    id: "4",
+    name: "Termometer Digital",
+    desc: "Akurat & mudah dibaca.",
+    price: "Rp 85.000",
+    image:
+      "https://images.unsplash.com/photo-1584634731339-252c581abfc5?auto=format&fit=crop&w=500&q=60",
+    rating: 4.7,
+    sellerName: "Ayufarma",
+  },
+  {
+    id: "5",
+    name: "Hand Sanitizer",
+    desc: "Antiseptik 70% alkohol.",
+    price: "Rp 30.000",
+    image:
+      "https://images.unsplash.com/photo-1584483766114-2cea6fac2564?auto=format&fit=crop&w=500&q=60",
+    rating: 4.6,
+    sellerName: "irafarma",
+  },
+  {
+    id: "6",
+    name: "Minyak Kayu Putih",
+    desc: "Menghangatkan tubuh & meredakan gatal.",
+    price: "Rp 22.000",
+    image:
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=60",
+    rating: 4.9,
+    sellerName: "Oktafarma",
+  },
 ];
 
 const CATEGORY_DATA = [
@@ -43,12 +97,20 @@ const CATEGORY_DATA = [
 /* ---------- Small reusable ScalePressable (tap feedback) ---------- */
 function ScalePressable({ children, onPress, style }) {
   const scale = useRef(new Animated.Value(1)).current;
-  const pressIn = () => Animated.timing(scale, { toValue: 0.97, duration: 100, useNativeDriver: true }).start();
-  const pressOut = () => Animated.timing(scale, { toValue: 1, duration: 120, useNativeDriver: true }).start();
+  const pressIn = () =>
+    Animated.timing(scale, { toValue: 0.97, duration: 100, useNativeDriver: true }).start();
+  const pressOut = () =>
+    Animated.timing(scale, { toValue: 1, duration: 120, useNativeDriver: true }).start();
 
   return (
     <Animated.View style={[{ transform: [{ scale }] }, style]}>
-      <TouchableOpacity activeOpacity={1} onPressIn={pressIn} onPressOut={pressOut} onPress={onPress} style={{ borderRadius: 14 }}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={pressIn}
+        onPressOut={pressOut}
+        onPress={onPress}
+        style={{ borderRadius: 14 }}
+      >
         {children}
       </TouchableOpacity>
     </Animated.View>
@@ -60,14 +122,22 @@ const ProductCard = ({ item, index, navigation }) => {
   // entrance animation for each card
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(anim, { toValue: 1, duration: 400, delay: index * 60, useNativeDriver: true }).start();
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 400,
+      delay: index * 60,
+      useNativeDriver: true,
+    }).start();
   }, [anim, index]);
 
   const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] });
   const opacity = anim;
 
   const onBuy = () => navigation.navigate?.("Detail", { product: item });
-  const onAddCart = () => Alert.alert("Keranjang", `${item.name} ditambahkan ke keranjang.`);
+  const onAddCart = () => {
+    // sementara alert — nanti bisa diganti addToCart logic
+    Alert.alert("Keranjang", `${item.name} ditambahkan ke keranjang.`);
+  };
 
   return (
     <Animated.View style={[styles.cardWrap, { opacity, transform: [{ translateY }] }]}>
@@ -83,8 +153,15 @@ const ProductCard = ({ item, index, navigation }) => {
 
         {/* Body */}
         <View style={styles.cardBody}>
-          <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.cardDesc} numberOfLines={2}>{item.desc}</Text>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={styles.sellerText} numberOfLines={1}>
+            {item.sellerName}
+          </Text>
+          <Text style={styles.cardDesc} numberOfLines={2}>
+            {item.desc}
+          </Text>
 
           {/* Price + controls */}
           <View style={styles.bottomArea}>
@@ -93,7 +170,12 @@ const ProductCard = ({ item, index, navigation }) => {
             <View style={styles.controlsRow}>
               {/* Buy button (pill, wide) */}
               <TouchableOpacity activeOpacity={0.9} onPress={onBuy} style={styles.buyTouch}>
-                <LinearGradient colors={["#001cab", "#0bb3e1"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.buyPill}>
+                <LinearGradient
+                  colors={["#001cab", "#0bb3e1"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buyPill}
+                >
                   <Text style={styles.buyText}>Beli</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -123,14 +205,11 @@ function HomeHeader({ search, setSearch, navigation }) {
           </View>
 
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconWrap}>
+            <TouchableOpacity style={styles.iconWrap} onPress={() => Alert.alert("Notifikasi", "Belum ada notifikasi.")}>
               <FontAwesomeIcon icon={faBell} size={16} color="#001cab" />
               <View style={styles.dot} />
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Keranjang")}
-              style={[styles.iconWrap, { marginLeft: 10 }]}
-            >
+            <TouchableOpacity onPress={() => navigation.navigate?.("Keranjang")} style={[styles.iconWrap, { marginLeft: 10 }]}>
               <FontAwesomeIcon icon={faCartShopping} size={16} color="#001cab" />
             </TouchableOpacity>
           </View>
@@ -138,8 +217,16 @@ function HomeHeader({ search, setSearch, navigation }) {
 
         <View style={styles.searchRow}>
           <Ionicons name="search" size={18} color="#9aa4b2" style={{ marginRight: 10 }} />
-          <TextInput value={search} onChangeText={setSearch} placeholder="Cari: obat, vitamin, alat medis..." placeholderTextColor="#9aa4b2" style={styles.searchInput} />
-          <TouchableOpacity style={styles.filter}><Ionicons name="options-outline" size={18} color="#001cab" /></TouchableOpacity>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Cari: obat, vitamin, alat medis..."
+            placeholderTextColor="#9aa4b2"
+            style={styles.searchInput}
+          />
+          <TouchableOpacity style={styles.filter}>
+            <Ionicons name="options-outline" size={18} color="#001cab" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -148,15 +235,23 @@ function HomeHeader({ search, setSearch, navigation }) {
           <View style={styles.heroLeft}>
             <Text style={styles.heroTitle}>Ampuh & Terpercaya</Text>
             <Text style={styles.heroSub}>Diskon sampai 50% untuk produk & layanan kesehatan.</Text>
-            <TouchableOpacity style={styles.heroCta}><Text style={styles.heroCtaText}>Lihat Promo</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.heroCta} onPress={() => Alert.alert("Promo", "Buka promo...")}>
+              <Text style={styles.heroCtaText}>Lihat Promo</Text>
+            </TouchableOpacity>
           </View>
-          <Image source={{ uri: "sandbox:/mnt/data/9f11a42b-6791-41ae-8434-46ba3a8f8f66.jpg" }} style={styles.heroImage} resizeMode="cover" />
+          <Image
+            source={{ uri: "sandbox:/mnt/data/9f11a42b-6791-41ae-8434-46ba3a8f8f66.jpg" }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
         </LinearGradient>
       </View>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Rekomendasi Sehat</Text>
-        <TouchableOpacity><Text style={styles.sectionLink}>Lihat Semua</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => Alert.alert("Lihat Semua", "Menampilkan semua produk...")}>
+          <Text style={styles.sectionLink}>Lihat Semua</Text>
+        </TouchableOpacity>
       </View>
     </>
   );
@@ -166,10 +261,17 @@ function HomeHeader({ search, setSearch, navigation }) {
 export default function Home({ navigation }) {
   const [search, setSearch] = useState("");
 
+  // simple search filtering (client-side)
+  const filtered = PRODUCT_DATA.filter((p) =>
+    p.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+    p.desc.toLowerCase().includes(search.trim().toLowerCase()) ||
+    p.sellerName.toLowerCase().includes(search.trim().toLowerCase())
+  );
+
   return (
     <SafeAreaView style={styles.safe}>
       <FlatList
-        data={PRODUCT_DATA}
+        data={filtered}
         keyExtractor={(i) => i.id}
         numColumns={2}
         columnWrapperStyle={styles.columns}
@@ -194,13 +296,31 @@ const styles = StyleSheet.create({
   },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   helloSmall: { color: "#7b8794", fontSize: 13 },
-  helloBig: { color: "#071233", fontSize: 20, fontWeight: "800", marginTop: 4 },
+  helloBig: { color: "#001cab", fontSize: 20, fontWeight: "800", marginTop: 4 },
 
   headerIcons: { flexDirection: "row", alignItems: "center" },
-  iconWrap: { width: 44, height: 44, backgroundColor: "#fff", borderRadius: 12, alignItems: "center", justifyContent: "center", elevation: 3 },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+  },
   dot: { position: "absolute", top: 8, right: 10, width: 8, height: 8, borderRadius: 6, backgroundColor: "#ff6b6b" },
 
-  searchRow: { marginTop: 12, flexDirection: "row", alignItems: "center", backgroundColor: "#fff", paddingHorizontal: 12, paddingVertical: Platform.OS === "android" ? 8 : 10, borderRadius: 12, borderWidth: 1, borderColor: "#eef2f7" },
+  searchRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === "android" ? 8 : 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#eef2f7",
+  },
   searchInput: { flex: 1, fontSize: 14, color: "#0f172a" },
   filter: { marginLeft: 8 },
 
@@ -238,11 +358,23 @@ const styles = StyleSheet.create({
   imageWrap: { width: "100%", backgroundColor: "#f8fbff" },
   cardImage: { width: "100%", height: 120 },
 
-  ratingBadge: { position: "absolute", left: 10, top: 94, backgroundColor: "#fff", paddingHorizontal: 8, paddingVertical: 5, borderRadius: 12, flexDirection: "row", alignItems: "center", elevation: 3 },
+  ratingBadge: {
+    position: "absolute",
+    left: 10,
+    top: 94,
+    backgroundColor: "#fff",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    elevation: 3,
+  },
   ratingText: { marginLeft: 6, fontWeight: "700", color: "#333", fontSize: 12 },
 
   cardBody: { padding: 12, paddingTop: 8 },
   cardTitle: { fontSize: 14, fontWeight: "800", color: "#071233" },
+  sellerText: { fontSize: 12, color: "#0071b7", fontWeight: "700", marginTop: 4 },
   cardDesc: { fontSize: 12, color: "#6b7280", marginTop: 6 },
 
   bottomArea: { marginTop: 12 },
