@@ -1,5 +1,5 @@
 // src/screen/Keranjang.jsx
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -14,153 +14,76 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useCart } from "../context/CartContext"; // <-- pakai context
 
 const { width } = Dimensions.get("window");
 
-/* ---------- Mock cart data (grouped by seller) ---------- */
-const INIT_CART = [
-  {
-    sellerId: "s1",
-    sellerName: "Tokoplus ID",
-    freeShippingProgress: 0.75, // contoh progress bar
-    items: [
-      {
-        id: "p1",
-        name: "Paracetamol 500mg",
-        variant: "Pack 10",
-        price: 12000,
-        qty: 1,
-        image:
-          "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=60",
-        checked: true,
-      },
-    ],
-  },
-  {
-    sellerId: "s2",
-    sellerName: "Mamimoe.Inc",
-    freeShippingProgress: 0.15,
-    items: [
-      {
-        id: "p2",
-        name: "Mini Sunflower Premium",
-        variant: "Sunflower",
-        price: 23750,
-        qty: 1,
-        image:
-          "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=60",
-        checked: false,
-      },
-      {
-        id: "p3",
-        name: "Red Bouquet Exclusive",
-        variant: "Default",
-        price: 30450,
-        qty: 1,
-        image:
-          "https://images.unsplash.com/photo-1549880338-65ddcdfd017b?auto=format&fit=crop&w=500&q=60",
-        checked: false,
-      },
-    ],
-  },
-];
+/**
+ This screen now reads cart from CartContext (flat list of items with sellerName).
+ We group items by sellerName for display similar to marketplace grouping.
+*/
 
-/* ---------- Utilities ---------- */
-const currency = (v) =>
-  typeof v === "number" ? `Rp ${v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}` : v;
-
-/* ---------- Keranjang Screen ---------- */
 export default function Keranjang({ navigation }) {
-  const [cart, setCart] = useState(INIT_CART);
+  const { cart, removeFromCart, changeQty, toggleItem, toggleAll, totals, currency } = useCart();
 
-  // Toggle an item checked
-  const toggleItem = (sellerId, itemId) => {
-    setCart((prev) =>
-      prev.map((s) =>
-        s.sellerId !== sellerId
-          ? s
-          : { ...s, items: s.items.map((it) => (it.id === itemId ? { ...it, checked: !it.checked } : it)) }
-      )
-    );
+  // Group cart items by sellerName -> [{ sellerName, items: [...] , freeShippingProgress }]
+  const grouped = useMemo(() => {
+    const map = {};
+    cart.forEach((it) => {
+      const seller = it.sellerName ?? "Toko";
+      if (!map[seller]) {
+        map[seller] = { sellerName: seller, items: [] };
+      }
+      map[seller].items.push(it);
+    });
+    // Example: add simple freeShippingProgress heuristic (optional)
+    return Object.values(map).map((s) => ({ ...s, freeShippingProgress: 0.4 }));
+  }, [cart]);
+
+  const handleToggleSeller = (sellerName) => {
+    // toggle each item that belongs to seller
+    const sellerItems = cart.filter((c) => (c.sellerName ?? "Toko") === sellerName);
+    const allChecked = sellerItems.every((i) => i.checked);
+    sellerItems.forEach((it) => {
+      if (it.checked === allChecked) toggleItem(it.id); // flip to opposite
+    });
   };
 
-  // Toggle all items in seller
-  const toggleSeller = (sellerId) => {
-    setCart((prev) =>
-      prev.map((s) =>
-        s.sellerId !== sellerId
-          ? s
-          : { ...s, items: s.items.map((it) => ({ ...it, checked: !s.items.every((i) => i.checked) })) }
-      )
-    );
-  };
-
-  // Change qty
-  const changeQty = (sellerId, itemId, delta) => {
-    setCart((prev) =>
-      prev.map((s) =>
-        s.sellerId !== sellerId
-          ? s
-          : {
-              ...s,
-              items: s.items.map((it) =>
-                it.id === itemId ? { ...it, qty: Math.max(1, it.qty + delta) } : it
-              ),
-            }
-      )
-    );
-  };
-
-  // Remove item
-  const removeItem = (sellerId, itemId) => {
+  const handleRemove = (itemId) => {
     Alert.alert("Hapus produk", "Yakin ingin menghapus produk dari keranjang?", [
       { text: "Batal", style: "cancel" },
       {
         text: "Hapus",
         style: "destructive",
-        onPress: () =>
-          setCart((prev) =>
-            prev
-              .map((s) => (s.sellerId !== sellerId ? s : { ...s, items: s.items.filter((it) => it.id !== itemId) }))
-              .filter((s) => s.items.length > 0)
-          ),
+        onPress: () => removeFromCart(itemId),
       },
     ]);
   };
-
-  // Calculate totals
-  const totals = useMemo(() => {
-    let subtotal = 0;
-    let itemCount = 0;
-    cart.forEach((seller) =>
-      seller.items.forEach((it) => {
-        if (it.checked) {
-          subtotal += it.price * it.qty;
-          itemCount += it.qty;
-        }
-      })
-    );
-    return { subtotal, itemCount };
-  }, [cart]);
 
   const handleCheckout = () => {
     if (totals.itemCount === 0) {
       Alert.alert("Keranjang kosong", "Pilih minimal 1 produk untuk melanjutkan checkout.");
       return;
     }
-    // lanjut ke proses checkout — contoh navigation
     navigation.navigate?.("Checkout", { subtotal: totals.subtotal });
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
-        
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 140 }}>
+        <Text style={styles.pageTitle}>Keranjang Saya</Text>
 
-        {cart.map((seller) => (
-          <View key={seller.sellerId} style={styles.sellerBlock}>
+        {grouped.length === 0 && (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Text style={{ color: "#666" }}>Keranjang kosong — ayo tambahkan produk!</Text>
+          </View>
+        )}
+
+        {grouped.map((seller) => (
+          <View key={seller.sellerName} style={styles.sellerBlock}>
             <View style={styles.sellerHeader}>
-              <TouchableOpacity onPress={() => toggleSeller(seller.sellerId)} style={styles.sellerLeft}>
+              <TouchableOpacity onPress={() => handleToggleSeller(seller.sellerName)} style={styles.sellerLeft}>
+                {/* show checked state if all items checked */}
                 <Ionicons
                   name={seller.items.every((i) => i.checked) ? "checkbox" : "square-outline"}
                   size={20}
@@ -173,13 +96,13 @@ export default function Keranjang({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            {/* free shipping hint */}
+            {/* free shipping hint (optional) */}
             <View style={styles.shippingHintWrap}>
               <View style={styles.shippingIcon}>
                 <Ionicons name="car-outline" size={16} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.shippingText}>Kamu telah menikmati Gratis Ongkir!</Text>
+                <Text style={styles.shippingText}>Kamu hampir mendapat Gratis Ongkir!</Text>
                 <View style={styles.progressBar}>
                   <View style={[styles.progressInner, { width: `${Math.min(100, seller.freeShippingProgress * 100)}%` }]} />
                 </View>
@@ -189,20 +112,18 @@ export default function Keranjang({ navigation }) {
             {/* items */}
             {seller.items.map((it) => (
               <View key={it.id} style={styles.itemRow}>
-                <TouchableOpacity onPress={() => toggleItem(seller.sellerId, it.id)} style={styles.checkboxWrap}>
+                <TouchableOpacity onPress={() => toggleItem(it.id)} style={styles.checkboxWrap}>
                   <Ionicons name={it.checked ? "checkbox" : "square-outline"} size={22} color="#001cab" />
                 </TouchableOpacity>
 
                 <Image source={{ uri: it.image }} style={styles.itemImage} />
 
                 <View style={styles.itemBody}>
-                  <Text style={styles.itemName} numberOfLines={2}>
-                    {it.name}
-                  </Text>
+                  <Text style={styles.itemName} numberOfLines={2}>{it.name}</Text>
 
                   <View style={styles.variantRow}>
                     <View style={styles.variantBadge}>
-                      <Text style={styles.variantText}>{it.variant}</Text>
+                      <Text style={styles.variantText}>{it.variant ?? "Default"}</Text>
                     </View>
 
                     <TouchableOpacity onPress={() => Alert.alert("Ubah varian", "Fungsi pilihan varian (placeholder).")}>
@@ -211,24 +132,24 @@ export default function Keranjang({ navigation }) {
                   </View>
 
                   <View style={styles.bottomRow}>
-                    <Text style={styles.price}>{currency(it.price)}</Text>
+                    <Text style={styles.price}>{currency(it.priceNumber ?? 0)}</Text>
 
                     <View style={styles.qtyWrap}>
-                      <TouchableOpacity style={styles.qtyBtn} onPress={() => changeQty(seller.sellerId, it.id, -1)}>
+                      <TouchableOpacity style={styles.qtyBtn} onPress={() => changeQty(it.id, -1)}>
                         <Text style={styles.qtyText}>-</Text>
                       </TouchableOpacity>
                       <Text style={styles.qtyNumber}>{it.qty}</Text>
-                      <TouchableOpacity style={styles.qtyBtn} onPress={() => changeQty(seller.sellerId, it.id, +1)}>
+                      <TouchableOpacity style={styles.qtyBtn} onPress={() => changeQty(it.id, +1)}>
                         <Text style={styles.qtyText}>+</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
 
                   <View style={styles.itemActions}>
-                    <TouchableOpacity onPress={() => removeItem(seller.sellerId, it.id)}>
+                    <TouchableOpacity onPress={() => handleRemove(it.id)}>
                       <Text style={styles.removeText}>Hapus</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => Alert.alert("Pindah ke simpanan", "Fungsi simpan nanti.")}>
+                    <TouchableOpacity onPress={() => Alert.alert("Simpan", "Simpan untuk nanti (placeholder).")}>
                       <Text style={styles.saveText}>Simpan</Text>
                     </TouchableOpacity>
                   </View>
@@ -236,35 +157,28 @@ export default function Keranjang({ navigation }) {
               </View>
             ))}
 
-            {/* seller subtotal / hint */}
+            {/* seller subtotal */}
             <View style={styles.sellerFooter}>
               <Text style={styles.sellerSubtotalLabel}>Subtotal toko</Text>
               <Text style={styles.sellerSubtotalValue}>
-                {currency(
-                  seller.items.reduce((s, it) => s + (it.checked ? it.price * it.qty : 0), 0)
-                )}
+                {currency(seller.items.reduce((s, it) => s + (it.checked ? (it.priceNumber || 0) * it.qty : 0), 0))}
               </Text>
             </View>
           </View>
         ))}
-
       </ScrollView>
 
       {/* Footer bar (fixed) */}
       <View style={styles.footer}>
         <View style={styles.footerLeft}>
-          <TouchableOpacity onPress={() => {
-            // toggle all
-            const allChecked = cart.every(s => s.items.every(i => i.checked));
-            setCart(prev => prev.map(s => ({ ...s, items: s.items.map(it => ({ ...it, checked: !allChecked })) })));
-          }} style={styles.selectAll}>
-            <Ionicons name={cart.every(s => s.items.every(i => i.checked)) ? "checkbox" : "square-outline"} size={20} color="#001cab" />
+          <TouchableOpacity onPress={() => toggleAll()} style={styles.selectAll}>
+            <Ionicons name={cartAllChecked(cart) ? "checkbox" : "square-outline"} size={20} color="#001cab" />
             <Text style={styles.selectAllText}>Semua</Text>
           </TouchableOpacity>
 
           <View style={{ marginLeft: 10 }}>
             <Text style={styles.totalLabel}>Gratis | <Text style={styles.totalPrice}>{currency(totals.subtotal)}</Text></Text>
-            <Text style={styles.savingText}>Hemat Rp{ ((totals.subtotal * 0.05) | 0).toLocaleString('id-ID') }</Text>
+            <Text style={styles.savingText}>Hemat Rp{ Math.floor((totals.subtotal * 0.05)).toLocaleString('id-ID') }</Text>
           </View>
         </View>
 
@@ -276,7 +190,13 @@ export default function Keranjang({ navigation }) {
   );
 }
 
-/* ---------- Styles ---------- */
+/* helper kecil di file ini */
+function cartAllChecked(cart) {
+  if (!cart || cart.length === 0) return false;
+  return cart.every((c) => c.checked);
+}
+
+/* ---------- Styles (sama seperti sebelumnya) ---------- */
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#f6f7fb" },
   container: { padding: 16 },

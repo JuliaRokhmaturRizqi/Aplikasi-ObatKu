@@ -1,5 +1,4 @@
 // src/screen/profile.jsx
-import React from "react";
 import {
   View,
   Text,
@@ -102,7 +101,7 @@ export default function halamanProfil({ navigation }) {
           <ProfileMenuItem
             icon="receipt-outline"
             label="Riwayat Pesanan"
-            onPress={() => handleMenuPress("Riwayat Pesanan")}
+            onPress={() => navigation.navigate("Orders")}
           />
           <ProfileMenuItem
             icon="location-outline"
@@ -115,17 +114,17 @@ export default function halamanProfil({ navigation }) {
             onPress={() => navigation.navigate("Bantuan")}
           />
           <ProfileMenuItem
-            icon="log-out-outline"
-            label="Keluar"
-            onPress={handleLogout}
-          />
-          <ProfileMenuItem
             icon="book-outline"
             label="Petunjuk Pengguna"
             onPress={() => navigation.navigate("PetunjukPengguna")}
           />
 
-          <ProfileMenuItem icon="log-out-outline" />
+          <ProfileMenuItem
+            icon="log-out-outline"
+            label="Keluar"
+            onPress={handleLogout}
+          />
+    
         </View>
       </ScrollView>
     </SafeAreaView>

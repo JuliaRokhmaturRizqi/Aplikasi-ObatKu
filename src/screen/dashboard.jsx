@@ -10,24 +10,45 @@ import {
   FlatList,
   Dimensions,
   RefreshControl,
+  Image,
+  Platform,
+  StatusBar
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { FontAwesome5 } from '@expo/vector-icons'; 
 import { useNavigation } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
+// --- KONFIGURASI WARNA BARU ---
+const COLORS = {
+  primary: "#0D47A1",      // Biru Tua
+  accent: "#229cffff",     // Biru Langit Cerah
+  background: "#F8F9FD",   // Putih Kebiruan
+  white: "#FFFFFF",
+  textDark: "#1E293B",
+  textGrey: "#64748B",
+  danger: "#EF4444",
+  success: "#10B981",
+  warning: "#F59E0B"
+};
+
+// URL Gambar yang sama dengan profile.jsx
+const PROFILE_IMAGE_URL = "https://i.pravatar.cc/150?img=12";
+
 /* ---------- Mock Data ---------- */
 const promotions = [
-  { id: "p1", title: "Diskon 20% Obat Bebas", desc: "Periode terbatas", color: "#FFF2E6" },
-  { id: "p2", title: "Buy 1 Get 1 Vitamin", desc: "Hanya minggu ini", color: "#EFFFF6" },
-  { id: "p3", title: "Gratis Ongkir 0-5km", desc: "Min. belanja Rp50.000", color: "#F0F7FF" },
+  { id: "p1", title: "Diskon 20% Obat", desc: "Periode terbatas", color: ["#4facfe", "#00f2fe"], icon: "medkit" },
+  { id: "p2", title: "Buy 1 Get 1", desc: "Vitamin C & D", color: ["#43e97b", "#38f9d7"], icon: "nutrition" },
+  { id: "p3", title: "Gratis Ongkir", desc: "Min. Rp50.000", color: ["#fa709a", "#fee140"], icon: "bicycle" },
 ];
 
 const recentOrders = [
   { id: "o1", name: "Paracetamol 500mg", date: "20 Nov 2025", status: "Dikirim", price: "Rp 12.000" },
   { id: "o2", name: "Vitamin C 1000mg", date: "10 Nov 2025", status: "Selesai", price: "Rp 45.000" },
   { id: "o3", name: "Masker Medis x50", date: "25 Okt 2025", status: "Dikemas", price: "Rp 80.000" },
+  { id: "o4", name: "Betadine Antiseptik", date: "22 Okt 2025", status: "Batal", price: "Rp 35.000" },
 ];
 
 const vouchers = [
@@ -35,207 +56,242 @@ const vouchers = [
   { id: "v2", code: "ONGKIR0", title: "Gratis Ongkir", min: "Min. Rp 0" },
 ];
 
-/* ---------- Small components ---------- */
-const StatCard = ({ label, value, icon, color }) => (
-  <View style={styles.statCard}>
-    <View style={[styles.iconBox, { backgroundColor: color }]}>
-      <Ionicons name={icon} size={18} color="#fff" />
-    </View>
-    <View style={{ marginLeft: 12 }}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  </View>
-);
+/* ---------- Components ---------- */
 
 const QuickAction = ({ icon, label, onPress }) => (
-  <TouchableOpacity style={styles.quickAction} onPress={onPress}>
+  <TouchableOpacity style={styles.quickAction} onPress={onPress} activeOpacity={0.7}>
     <View style={styles.quickIconWrap}>
-      <Ionicons name={icon} size={22} color="#001cab" />
+      {/* Menggunakan warna Accent untuk icon agar kontras dengan background putih */}
+      <Ionicons name={icon} size={24} color={COLORS.primary} />
     </View>
     <Text style={styles.quickLabel}>{label}</Text>
   </TouchableOpacity>
 );
 
 const PromoCard = ({ item }) => (
-  <TouchableOpacity activeOpacity={0.85} style={[styles.promoCard, { backgroundColor: item.color }]}>
-    <Text style={styles.promoTitle}>{item.title}</Text>
-    <Text numberOfLines={2} style={styles.promoDesc}>{item.desc}</Text>
-    <Ionicons name="chevron-forward" size={18} color="#001cab" style={{ marginTop: 8 }} />
+  <TouchableOpacity activeOpacity={0.9} style={styles.promoCardContainer}>
+    <LinearGradient
+      colors={item.color}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.promoGradient}
+    >
+      <View style={styles.promoIconBg}>
+        <Ionicons name={item.icon} size={20} color={COLORS.white} />
+      </View>
+      <View>
+        <Text style={styles.promoTitle}>{item.title}</Text>
+        <Text style={styles.promoDesc}>{item.desc}</Text>
+      </View>
+    </LinearGradient>
   </TouchableOpacity>
 );
 
 const OrderItem = ({ item, onPress }) => {
-  const statusColor = item.status === "Selesai" ? "#4CAF50" : item.status === "Dikirim" ? "#2196F3" : "#FF9800";
+  let statusColor = COLORS.warning; 
+  let statusBg = "#FFF8E1";
+  
+  if (item.status === "Selesai") {
+    statusColor = COLORS.success;
+    statusBg = "#E8F5E9"; // Light Green
+  } else if (item.status === "Dikirim") {
+    statusColor = COLORS.accent;
+    statusBg = "#E0F7FA"; // Light Cyan
+  } else if (item.status === "Batal") {
+    statusColor = COLORS.danger;
+    statusBg = "#FFEBEE"; // Light Red
+  }
+
   return (
-    <TouchableOpacity activeOpacity={0.85} style={styles.orderRow} onPress={() => onPress?.(item)}>
-      <View style={styles.thumbPlaceholder}>
-        <Ionicons name="cube-outline" size={26} color="#fff" />
+    <TouchableOpacity activeOpacity={0.8} style={styles.orderRow} onPress={() => onPress?.(item)}>
+      <View style={styles.orderIconBox}>
+        <FontAwesome5 name="box-open" size={20} color={COLORS.primary} />
       </View>
       <View style={{ flex: 1, marginLeft: 14 }}>
-        <Text style={styles.orderName}>{item.name}</Text>
+        <Text style={styles.orderName} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.orderMeta}>{item.date} • {item.price}</Text>
       </View>
-      <View style={[styles.orderStatus, { backgroundColor: statusColor + "22" }]}>
-        <Text style={[styles.orderStatusText, { color: statusColor }]}>{item.status}</Text>
+      <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
+        <Text style={[styles.statusText, { color: statusColor }]}>{item.status}</Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-/* ---------- Header component used as ListHeaderComponent ---------- */
-function DashboardHeader({ query, setQuery, balance, coins, onQuickActionPress }) {
-  return (
-    <View>
-      <LinearGradient colors={["#001cab", "#0bb3e1"]} style={styles.header}>
-        <View style={styles.headerInner}>
-          <View>
-            <Text style={styles.headerHello}>Halo, Julia</Text>
-            <Text style={styles.headerSubtitle}>Selamat datang kembali</Text>
-          </View>
+/* ---------- Header with Gradient & Logic ---------- */
+function DashboardHeader({ query, setQuery, balance, coins, onQuickActionPress, navigation }) {
+  
+  const handleProfilePress = () => {
+    // Navigasi ke halaman Profile
+    navigation.navigate("Profile"); 
+  };
 
-          <TouchableOpacity style={styles.profileWrap}>
-            <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={20} color="#001cab" />
+  return (
+    <View style={styles.headerWrapper}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+      
+      {/* 1. Curved Background dengan GRADIENT WARNA BARU */}
+      <View style={styles.curvedContainer}>
+        <LinearGradient
+            colors={[COLORS.primary, COLORS.accent]} // Gradasi dari Biru Tua ke Biru Langit
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.curvedBg}
+        >
+            {/* Top Bar */}
+            <View style={styles.headerTop}>
+            <View>
+                <Text style={styles.greetingText}>Halo, Julia 👋</Text>
+                <Text style={styles.subGreeting}>Sehat selalu bersama CampusNoteX!</Text>
             </View>
+            
+            {/* FOTO PROFIL */}
+            <TouchableOpacity style={styles.profileAvatarContainer} onPress={handleProfilePress}>
+                <Image 
+                source={{ uri: PROFILE_IMAGE_URL }} 
+                style={styles.profileImage}
+                />
+                <View style={styles.onlineDot} />
+            </TouchableOpacity>
+            </View>
+
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="#E2E8F0" style={{ marginRight: 10 }} />
+            <TextInput
+                placeholder="Cari obat, vitamin..."
+                placeholderTextColor="#E2E8F0"
+                value={query}
+                onChangeText={setQuery}
+                style={styles.searchInput}
+            />
+            </View>
+        </LinearGradient>
+      </View>
+
+      {/* 2. Floating Info Cards */}
+      <View style={styles.floatingCardsContainer}>
+        {/* Kartu Saldo */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoLabelRow}>
+            <Ionicons name="wallet-outline" size={18} color={COLORS.primary} />
+            <Text style={styles.infoLabel}>Saldo Saya</Text>
+          </View>
+          <Text style={styles.infoValue}>{balance}</Text>
+          <TouchableOpacity style={styles.miniBtn}>
+             <Text style={styles.miniBtnText}>+ Top Up</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.balanceRow}>
-          <View style={styles.balanceBox}>
-            <Text style={styles.balanceLabel}>Saldo</Text>
-            <Text style={styles.balanceValue}>{balance}</Text>
+        {/* Kartu Koin */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoLabelRow}>
+            <FontAwesome5 name="coins" size={14} color={COLORS.warning} />
+            <Text style={styles.infoLabel}>Koin</Text>
           </View>
-          <View style={styles.coinBox}>
-            <Text style={styles.balanceLabel}>Koin</Text>
-            <Text style={styles.balanceValue}>{coins}</Text>
+          <Text style={styles.infoValue}>{coins}</Text>
+          <TouchableOpacity style={styles.miniBtnOutline}>
+             <Text style={styles.miniBtnTextOutline}>Tukar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.bodyContent}>
+        
+        {/* Quick Actions */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Akses Cepat</Text>
+          <View style={styles.quickGrid}>
+            <QuickAction icon="cart" label="Belanja" onPress={() => onQuickActionPress?.("shop")} />
+            <QuickAction icon="receipt" label="Pesanan" onPress={() => onQuickActionPress?.("orders")} />
+            <QuickAction icon="medkit" label="Resep" onPress={() => {}} />
+            <QuickAction icon="chatbubbles" label="Chat Dr." onPress={() => onQuickActionPress?.("help")} />
           </View>
         </View>
 
-        <View style={styles.searchWrap}>
-          <Ionicons name="search" size={18} color="#999" style={{ marginLeft: 12 }} />
-          <TextInput
-            placeholder="Cari obat, vitamin, alat medis..."
-            placeholderTextColor="#888"
-            value={query}
-            onChangeText={setQuery}
-            style={styles.searchInput}
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")} style={{ paddingHorizontal: 8 }}>
-              <Ionicons name="close-circle" size={18} color="#999" />
+        {/* Promo Banner */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Promo Spesial</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>Lihat Semua</Text>
             </TouchableOpacity>
-          )}
-        </View>
-      </LinearGradient>
-
-      <View style={styles.pageContent}>
-        {/* Quick actions (spasi lebih longgar) */}
-        <View style={[styles.section, styles.spaciousSection]}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Aksi Cepat</Text>
-            <TouchableOpacity><Text style={styles.seeAll}>Kelola</Text></TouchableOpacity>
           </View>
-
-          <View style={styles.quickRow}>
-            <QuickAction icon="cart-outline" label="Belanja" onPress={() => onQuickActionPress?.("shop")} />
-            <QuickAction icon="wallet-outline" label="TopUp" onPress={() => onQuickActionPress?.("topup")} />
-            <QuickAction icon="receipt-outline" label="Pesanan" onPress={() => onQuickActionPress?.("orders")} />
-            <QuickAction icon="chatbubbles-outline" label="Bantuan" onPress={() => onQuickActionPress?.("help")} />
-          </View>
-        </View>
-
-        {/* Statistik: beri ruang antar kartu */}
-        <View style={[styles.section, styles.spaciousSection]}>
-          <Text style={styles.sectionTitle}>Ringkasan</Text>
-          <View style={styles.statsGrid}>
-            <StatCard label="Transaksi" value="120" icon="swap-horizontal-outline" color="#FF9800" />
-            <StatCard label="Terjual" value="1.350" icon="bag-check-outline" color="#4CAF50" />
-            <StatCard label="Rating" value="4.8" icon="star-outline" color="#FFC107" />
-          </View>
-
-          <View style={{ marginTop: 14 }}>
-            <Text style={styles.smallMuted}>Target Bulan Ini</Text>
-            <View style={styles.progressBg}>
-              <View style={[styles.progressFill, { width: "64%" }]} />
-            </View>
-            <Text style={[styles.smallMuted, { marginTop: 8 }]}>64% tercapai</Text>
-          </View>
-        </View>
-
-        {/* Promo horizontal (lebih besar card + margin) */}
-        <View style={[styles.section, styles.spaciousSection]}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Promo untukmu</Text>
-            <TouchableOpacity><Text style={styles.seeAll}>Lihat Semua</Text></TouchableOpacity>
-          </View>
-
           <FlatList
             data={promotions}
             keyExtractor={(i) => i.id}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: 8 }}
-            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            contentContainerStyle={{ paddingHorizontal: 4 }}
             renderItem={({ item }) => <PromoCard item={item} />}
           />
         </View>
 
-        {/* Voucher (single row, lebih lapang) */}
-        <View style={[styles.section, styles.spaciousSection]}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Voucher</Text>
-            <TouchableOpacity><Text style={styles.seeAll}>Gunakan</Text></TouchableOpacity>
-          </View>
-          <View style={{ marginTop: 12 }}>
+        {/* Vouchers */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Voucher Tersedia</Text>
+          <View style={styles.voucherList}>
             {vouchers.map((v) => (
-              <View key={v.id} style={styles.voucherRow}>
+              <View key={v.id} style={styles.voucherItem}>
                 <View style={styles.voucherLeft}>
-                  <Text style={styles.voucherCode}>{v.code}</Text>
-                  <Text style={styles.voucherTitle}>{v.title}</Text>
+                  <View style={styles.ticketIcon}>
+                    <Ionicons name="ticket-outline" size={20} color={COLORS.white} />
+                  </View>
+                  <View style={{ marginLeft: 12 }}>
+                    <Text style={styles.voucherCode}>{v.code}</Text>
+                    <Text style={styles.voucherMin}>{v.min}</Text>
+                  </View>
                 </View>
-                <Text style={styles.voucherMin}>{v.min}</Text>
+                <TouchableOpacity style={styles.useBtn}>
+                  <Text style={styles.useBtnText}>Pakai</Text>
+                </TouchableOpacity>
               </View>
             ))}
           </View>
         </View>
+        
+        {/* Header for Orders List */}
+        <View style={[styles.sectionHeader, { marginBottom: 10, paddingHorizontal: 20 }]}>
+          <Text style={styles.sectionTitle}>Pesanan Terakhir</Text>
+          <TouchableOpacity onPress={() => onQuickActionPress?.("orders")}>
+              <Text style={styles.seeAllText}>Riwayat</Text>
+          </TouchableOpacity>
+        </View>
+
       </View>
     </View>
   );
 }
 
-/* ---------- Main Dashboard (FlatList root) ---------- */
+/* ---------- Main Screen ---------- */
 export default function Dashboard() {
   const navigation = useNavigation();
   const [query, setQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Data State
   const [balance] = useState("Rp 150.000");
   const [coins] = useState("2.500");
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // fetch data -> simulate
-    setTimeout(() => setRefreshing(false), 800);
+    setTimeout(() => setRefreshing(false), 1500);
   }, []);
 
   const onQuickActionPress = (action) => {
-    if (action === "orders") navigation.navigate?.("Orders");
-    if (action === "shop") navigation.navigate?.("Products");
+    if (action === "orders") navigation.navigate?.("Orders"); 
+    if (action === "shop") navigation.navigate?.("Home");     
+    if (action === "help") navigation.navigate?.("Bantuan");
   };
 
-  const renderOrder = ({ item }) => (
-    <OrderItem item={item} onPress={(it) => navigation.navigate?.("DetailProduk", { id: it.id })} />
-  );
-
-  const keyExtractor = (item) => item.id;
-
+  // Empty State
   const listEmptyComponent = useMemo(() => (
-    <View style={styles.emptyWrap}>
-      <Ionicons name="clipboard-outline" size={42} color="#999" />
-      <Text style={styles.emptyText}>Belum ada pesanan</Text>
-      <Text style={styles.emptySub}>Mulai belanja untuk melihat pesananmu di sini.</Text>
-      <TouchableOpacity style={styles.ctaBtn} onPress={() => navigation.navigate?.("Products")}>
-        <Text style={styles.ctaText}>Mulai Belanja</Text>
+    <View style={styles.emptyContainer}>
+      <Ionicons name="documents-outline" size={48} color="#CBD5E1" />
+      <Text style={styles.emptyTitle}>Belum ada pesanan</Text>
+      <Text style={styles.emptyDesc}>Yuk mulai belanja kebutuhan kesehatanmu.</Text>
+      <TouchableOpacity style={styles.emptyBtn} onPress={() => navigation.navigate?.("Home")}>
+        <Text style={styles.emptyBtnText}>Mulai Belanja</Text>
       </TouchableOpacity>
     </View>
   ), [navigation]);
@@ -244,92 +300,247 @@ export default function Dashboard() {
     <SafeAreaView style={styles.container}>
       <FlatList
         data={recentOrders}
-        keyExtractor={keyExtractor}
-        renderItem={renderOrder}
-        ListHeaderComponent={<DashboardHeader query={query} setQuery={setQuery} balance={balance} coins={coins} onQuickActionPress={onQuickActionPress} />}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={{ paddingBottom: 28 }}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+            <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
+                <OrderItem item={item} onPress={(it) => navigation.navigate?.("DetailProduk", { id: it.id })} />
+            </View>
+        )}
+        ListHeaderComponent={
+          <DashboardHeader 
+            query={query} 
+            setQuery={setQuery} 
+            balance={balance} 
+            coins={coins} 
+            onQuickActionPress={onQuickActionPress}
+            navigation={navigation} 
+          />
+        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
+        contentContainerStyle={{ paddingBottom: 40 }}
         ListEmptyComponent={listEmptyComponent}
-        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
       />
     </SafeAreaView>
   );
 }
 
-/* ---------- Styles (lebih longgar & rapi) ---------- */
+/* ---------- Styles (Updated with New Colors) ---------- */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f6f8fb" },
+  container: { flex: 1, backgroundColor: COLORS.background },
 
-  /* Header */
-  header: { paddingBottom: 18, borderBottomLeftRadius: 18, borderBottomRightRadius: 18 },
-  headerInner: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 18, paddingTop: 12 },
-  headerHello: { color: "#fff", fontSize: 18, fontWeight: "700" },
-  headerSubtitle: { color: "#e6eef8", fontSize: 13, marginTop: 2 },
-  profileWrap: { flexDirection: "row", alignItems: "center" },
-  profileAvatar: { width: 44, height: 44, borderRadius: 12, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  /* --- HEADER STYLES --- */
+  headerWrapper: { marginBottom: 10 },
+  
+  curvedContainer: {
+    // Container untuk border radius bawah
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden', // Penting agar gradient mengikuti border radius
+  },
+  curvedBg: {
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
+    paddingHorizontal: 20,
+    paddingBottom: 60, // Ruang untuk floating card
+  },
+  
+  headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
+  greetingText: { color: COLORS.white, fontSize: 20, fontWeight: "800" },
+  subGreeting: { color: "#E0F2FE", fontSize: 13, marginTop: 4 }, // Light tint blue
+  
+  // Profile Image Style
+  profileAvatarContainer: { 
+    position: 'relative',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5 
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+  },
+  onlineDot: {
+    position: "absolute",
+    bottom: 0,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: COLORS.success,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+  },
 
-  /* Balance */
-  balanceRow: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 18, marginTop: 12 },
-  balanceBox: { flex: 1, backgroundColor: "#fff", padding: 14, marginRight: 10, borderRadius: 12, elevation: 1 },
-  coinBox: { width: 130, backgroundColor: "#fff", padding: 14, borderRadius: 12, alignItems: "center", justifyContent: "center", elevation: 1 },
-  balanceLabel: { color: "#666", fontSize: 12 },
-  balanceValue: { color: "#333", fontWeight: "800", marginTop: 6 },
+  // Search
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.2)", // Glassmorphism effect
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 45,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+  searchInput: { flex: 1, color: COLORS.white, fontSize: 14, fontWeight: "500" },
 
-  /* Search */
-  searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", marginHorizontal: 18, marginTop: 14, borderRadius: 14, paddingVertical: 10 },
-  searchInput: { flex: 1, paddingHorizontal: 10, fontSize: 14, color: "#333" },
+  /* --- FLOATING INFO CARDS --- */
+  floatingCardsContainer: {
+    flexDirection: "row",
+    marginTop: -45, // Tarik ke atas menimpa header
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 16,
+    marginHorizontal: 6,
+    // Shadow Biru Lembut
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start'
+  },
+  infoLabelRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  infoLabel: { fontSize: 12, color: COLORS.textGrey, marginLeft: 6, fontWeight: "600" },
+  infoValue: { fontSize: 18, fontWeight: "800", color: COLORS.textDark, marginBottom: 10 },
+  
+  // Mini Buttons on Card
+  miniBtn: {
+    backgroundColor: COLORS.accent + "20", // Transparan 20%
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  miniBtnText: { fontSize: 12, color: COLORS.primary, fontWeight: "700" },
+  
+  miniBtnOutline: {
+    borderWidth: 1,
+    borderColor: COLORS.warning,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  miniBtnTextOutline: { fontSize: 12, color: COLORS.warning, fontWeight: "700" },
 
-  pageContent: { paddingHorizontal: 16, marginTop: -8 },
+  /* --- BODY CONTENT --- */
+  bodyContent: { paddingHorizontal: 0 },
+  
+  sectionContainer: { marginBottom: 24, paddingHorizontal: 20 },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark, marginBottom: 12 },
+  seeAllText: { fontSize: 14, fontWeight: "700", color: COLORS.primary },
 
-  /* Section */
-  section: { marginTop: 12, backgroundColor: "#fff", borderRadius: 12, padding: 12, elevation: 1 },
-  spaciousSection: { padding: 14 }, // ekstra padding untuk ruang
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#222" },
-  sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  seeAll: { color: "#001cab", fontWeight: "700" },
+  /* Quick Action Grid */
+  quickGrid: { flexDirection: "row", justifyContent: "space-between" },
+  quickAction: { alignItems: "center", width: "22%" },
+  quickIconWrap: {
+    width: 54,
+    height: 54,
+    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    // Soft shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#F1F5F9"
+  },
+  quickLabel: { fontSize: 12, color: COLORS.textGrey, fontWeight: "600" },
 
-  /* Quick actions */
-  quickRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 12 },
-  quickAction: { alignItems: "center", width: (width - 80) / 4, paddingVertical: 6 },
-  quickIconWrap: { width: 50, height: 50, borderRadius: 12, backgroundColor: "#f3f8ff", alignItems: "center", justifyContent: "center" },
-  quickLabel: { marginTop: 8, fontSize: 12, color: "#333", textAlign: "center" },
+  /* Promo Cards */
+  promoCardContainer: { marginRight: 14, width: 260, borderRadius: 20, overflow: "hidden" },
+  promoGradient: { padding: 18, flexDirection: "row", alignItems: "center", height: 110 },
+  promoIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+  promoTitle: { color: COLORS.white, fontSize: 16, fontWeight: "800", marginBottom: 4 },
+  promoDesc: { color: "rgba(255,255,255,0.95)", fontSize: 12, fontWeight: "500" },
 
-  /* Stats */
-  statsGrid: { flexDirection: "row", justifyContent: "space-between", marginTop: 12 },
-  statCard: { flex: 1, backgroundColor: "#fff", padding: 12, borderRadius: 12, marginRight: 8, flexDirection: "row", alignItems: "center", elevation: 0 },
-  iconBox: { width: 44, height: 44, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  statValue: { fontSize: 15, fontWeight: "800", color: "#333" },
-  statLabel: { fontSize: 12, color: "#666" },
+  /* Voucher List */
+  voucherList: { gap: 12 },
+  voucherItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: COLORS.white,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    // Shadow Tipis
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  voucherLeft: { flexDirection: "row", alignItems: "center" },
+  ticketIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: COLORS.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  voucherCode: { fontSize: 15, fontWeight: "800", color: COLORS.textDark },
+  voucherMin: { fontSize: 12, color: COLORS.textGrey, marginTop: 2 },
+  useBtn: { backgroundColor: "#EFF6FF", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+  useBtnText: { color: COLORS.primary, fontWeight: "700", fontSize: 12 },
 
-  progressBg: { backgroundColor: "#eef5ff", height: 8, borderRadius: 8, overflow: "hidden", marginTop: 10 },
-  progressFill: { backgroundColor: "#001cab", height: 8, borderRadius: 8 },
+  /* Orders List Item */
+  orderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.white,
+    padding: 16,
+    borderRadius: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#F1F5F9"
+  },
+  orderIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  orderName: { fontSize: 14, fontWeight: "700", color: COLORS.textDark, marginBottom: 4 },
+  orderMeta: { fontSize: 12, color: COLORS.textGrey },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  statusText: { fontSize: 11, fontWeight: "700" },
 
-  /* Promo */
-  promoCard: { width: width * 0.74, borderRadius: 12, padding: 16, justifyContent: "space-between", elevation: 0 },
-  promoTitle: { color: "#001cab", fontWeight: "800", fontSize: 15 },
-  promoDesc: { color: "#333", fontSize: 13, marginTop: 6 },
-
-  /* Voucher */
-  voucherRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#f4f6f9" },
-  voucherLeft: { flexDirection: "column" },
-  voucherCode: { fontWeight: "800", color: "#001cab", fontSize: 14 },
-  voucherTitle: { marginTop: 6, color: "#333" },
-  voucherMin: { fontSize: 12, color: "#777" },
-
-  /* Orders */
-  orderRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 10, backgroundColor: "#fff", marginHorizontal: 6, borderRadius: 12 },
-  thumbPlaceholder: { width: 60, height: 60, borderRadius: 12, backgroundColor: "#001cab", alignItems: "center", justifyContent: "center" },
-  orderName: { fontWeight: "700", color: "#222" },
-  orderMeta: { fontSize: 12, color: "#777", marginTop: 6 },
-  orderStatus: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14 },
-  orderStatusText: { fontWeight: "700", fontSize: 12 },
-
-  /* Empty */
-  emptyWrap: { alignItems: "center", padding: 36 },
-  emptyText: { marginTop: 12, fontSize: 16, fontWeight: "700", color: "#333" },
-  emptySub: { marginTop: 6, color: "#777", textAlign: "center" },
-  ctaBtn: { marginTop: 14, backgroundColor: "#001cab", paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10 },
-  ctaText: { color: "#fff", fontWeight: "700" },
-
-  smallMuted: { color: "#6f7786", fontSize: 12 }
+  /* Empty State */
+  emptyContainer: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 20 },
+  emptyTitle: { marginTop: 16, fontSize: 18, fontWeight: "800", color: COLORS.textDark },
+  emptyDesc: { marginTop: 4, color: COLORS.textGrey, textAlign: "center", marginBottom: 20 },
+  emptyBtn: { backgroundColor: COLORS.primary, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12 },
+  emptyBtnText: { color: COLORS.white, fontWeight: "700" },
 });

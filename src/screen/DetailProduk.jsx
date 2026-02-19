@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useCart } from "../context/CartContext";
 
 const { width } = Dimensions.get("window");
 
@@ -25,34 +26,51 @@ const REVIEWS = [
 ];
 
 export default function DetailProduk({ route, navigation }) {
-  // Ambil product dari route params (jika tidak ada, buat fallback sederhana)
+  // Ambil product dari route params (fallback jika tidak ada)
   const product = route?.params?.product ?? {
+    id: "unknown",
     name: "Produk tidak ditemukan",
     desc: "-",
-    price: "-",
+    price: "Rp 0",
     image: null,
     rating: 0,
     sellerName: "Toko Tidak Diketahui",
   };
 
+  // useCart dari context
+  const { addToCart } = useCart();
+
   const handleVisitSeller = () => {
-    // Kalau punya halaman seller: navigation.navigate('Seller', { sellerName: product.sellerName })
+    // placeholder: jika ada screen Seller, ganti navigation ke sana
     Alert.alert("Toko", `Buka halaman toko: ${product.sellerName}`);
   };
 
   const handleAddToCart = () => {
-    // Sementara: alert. Nanti bisa implement add-to-cart nyata (Context / Redux / AsyncStorage, dll.)
-    Alert.alert("Keranjang", `${product.name} ditambahkan ke keranjang.`);
+    // tambahkan 1 qty ke cart via context
+    try {
+      addToCart(product, { qty: 1 });
+      Alert.alert("Berhasil", `${product.name} ditambahkan ke keranjang.`);
+    } catch (e) {
+      Alert.alert("Gagal", "Tidak dapat menambahkan ke keranjang.");
+      console.error(e);
+    }
   };
 
   const handleBuyNow = () => {
-    // Sementara: alert. Nanti bisa diarahkan ke flow checkout.
-    Alert.alert("Checkout", `Lanjut ke pembayaran untuk: ${product.name}`);
+    // tambahkan ke keranjang lalu buka halaman Keranjang (bisa lanjut ke Checkout)
+    try {
+      addToCart(product, { qty: 1 });
+      // langsung buka keranjang
+      navigation.navigate?.("Keranjang");
+    } catch (e) {
+      Alert.alert("Gagal", "Terjadi masalah saat memproses pesanan.");
+      console.error(e);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
         {/* --- Header Gambar --- */}
         <View style={styles.imageContainer}>
           {product.image ? (

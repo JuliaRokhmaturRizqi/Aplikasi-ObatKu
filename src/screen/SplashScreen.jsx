@@ -1,70 +1,120 @@
 // src/screen/SplashScreen.jsx
 
-import React, { useEffect } from "react"; // <-- Tambah useEffect
-import { View, Text, StyleSheet, Image } from "react-native"; // <-- Tambah Image
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient"; // <-- Import LinearGradient
-import { StatusBar } from "expo-status-bar"; // Untuk mengatur status bar
+import { LinearGradient } from "expo-linear-gradient";
+import { StatusBar } from "expo-status-bar";
 
-// Pastikan path ke splash icon Anda benar
-import SplashScreenIcon from "../../assets/splash-icon.png"; 
+import LogoObatku from "../../assets/LOGO_OBATKU.png";
 
 export default function SplashScreen({ navigation }) {
   useEffect(() => {
-    // Logika ini akan berjalan setelah komponen di-render pertama kali
     const timer = setTimeout(() => {
-      // Setelah 3 detik (3000 ms), navigasi ke layar 'Login'
-      // `replace` digunakan agar pengguna tidak bisa kembali ke splash screen
-      navigation.replace("Login"); 
-    }, 3000); // Durasi splash screen (3 detik)
+      navigation.replace("Login");
+    }, 2800);
 
-    // Cleanup function: penting untuk membersihkan timer jika komponen di-unmount
     return () => clearTimeout(timer);
-  }, []); // Array kosong berarti useEffect hanya berjalan sekali saat mount
+  }, []);
 
   return (
-    <LinearGradient // Menggunakan LinearGradient sebagai latar belakang
-      colors={["#001cab", "#0bb3e1"]} // Warna gradien Anda
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.gradientContainer}
+    <LinearGradient
+      colors={["#001cab", "#0bb3e1"]}
+      style={styles.container}
     >
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="light" /> {/* Status bar menjadi putih agar terlihat di background gelap */}
-        <Image source={SplashScreenIcon} style={styles.logo} />
+      <StatusBar style="light" />
+
+      <SafeAreaView style={styles.safe}>
+        {/* Logo */}
+        <View style={styles.logoWrapper}>
+          <Image source={LogoObatku} style={styles.logo} />
+        </View>
+
+        {/* Text */}
         <Text style={styles.title}>ObatKU</Text>
-        <Text style={styles.subtitle}>Temukan kebutuhan Anda dengan mudah</Text>
+        <Text style={styles.subtitle}>
+          Solusi kesehatan{"\n"}mudah & terpercaya
+        </Text>
+
+        {/* White Wave */}
+        <View style={styles.waveContainer}>
+          <View style={styles.wave} />
+        </View>
+
+        {/* Footer */}
+        <Text style={styles.footer}>© 2025 ObatKU</Text>
       </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientContainer: {
+  container: {
     flex: 1,
   },
-  safeArea: {
+  safe: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
+
+  logoWrapper: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 28,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+  },
+
   logo: {
-    width: 180, // Sesuaikan ukuran logo
-    height: 180, // Sesuaikan ukuran logo
-    resizeMode: "contain", // Pastikan logo tetap proporsional
-    marginBottom: 20,
+    width: 110,
+    height: 110,
+    resizeMode: "contain",
   },
+
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#ffffff",
     letterSpacing: 1,
-    marginBottom: 10,
   },
+
   subtitle: {
-    fontSize: 16,
-    color: "#e0e0e0",
+    marginTop: 10,
+    fontSize: 14,
+    color: "rgba(255,255,255,0.9)",
     textAlign: "center",
-    paddingHorizontal: 40,
+    lineHeight: 22,
+  },
+
+  waveContainer: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    height: 180,
+    overflow: "hidden",
+  },
+
+  wave: {
+    width: "120%",
+    height: "100%",
+    backgroundColor: "#ffffff",
+    borderTopLeftRadius: 200,
+    borderTopRightRadius: 200,
+    alignSelf: "center",
+  },
+
+  footer: {
+    position: "absolute",
+    bottom: 20,
+    fontSize: 12,
+    color: "#001cab",
   },
 });
